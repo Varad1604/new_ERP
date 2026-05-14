@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: erp_admin
+      POSTGRES_PASSWORD: erp_password_dev
+      POSTGRES_DB: enterprise_erp
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - erp_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - erp_network
+
+  core-api:
+    build:
+      context: ./backend/core
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_HOST=db
+      - DB_USER=erp_admin
+      - DB_PASSWORD=erp_password_dev
+      - DB_NAME=enterprise_erp
+      - REDIS_HOST=redis:6379
+    depends_on:
+      - db
+      - redis
+    networks:
+      - erp_network
+
+  ai-engine:
+    build:
+      context: ./backend/ai
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    networks:
+      - erp_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+    depends_on:
+      - core-api
+    networks:
+      - erp_network
+
+volumes:
+  pgdata:
+
+networks:
+  erp_network:
+    driver: bridge
