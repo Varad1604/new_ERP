@@ -13,18 +13,58 @@ class AIResponse(BaseModel):
     response: str
     metadata: Dict[str, Any]
 
-# Provider-agnostic AI interface (Stub)
+import openai
+import anthropic
+
+# Provider-agnostic AI interface
 class AIProviderInterface:
     def execute_prompt(self, prompt: str) -> str:
         raise NotImplementedError
 
+class OpenAIProvider(AIProviderInterface):
+    def __init__(self, api_key: str):
+        self.client = openai.Client(api_key=api_key)
+
+    def execute_prompt(self, prompt: str) -> str:
+        response = self.client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0
+        )
+        return response.choices[0].message.content
+
+class AnthropicProvider(AIProviderInterface):
+    def __init__(self, api_key: str):
+        self.client = anthropic.Anthropic(api_key=api_key)
+
+    def execute_prompt(self, prompt: str) -> str:
+        response = self.client.messages.create(
+            model="claude-3-opus-20240229",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.content[0].text
+
 class StubAIProvider(AIProviderInterface):
     def execute_prompt(self, prompt: str) -> str:
-        return f"AI Simulation response for: {prompt[:20]}..."
+        return f"Enterprise ERP Stub Response: The AI module received your query: '{prompt}'."
 
 # Dependency Injection for AI Provider
 def get_ai_provider() -> AIProviderInterface:
-    # In production, this would read from env vars to initialize OpenAI, Anthropic, or Local LLM
+    provider_name = os.getenv("AI_PROVIDER", "stub").lower()
+
+    if provider_name == "openai":
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY is missing")
+        return OpenAIProvider(api_key)
+
+    elif provider_name == "anthropic":
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY is missing")
+        return AnthropicProvider(api_key)
+
     return StubAIProvider()
 
 @app.get("/health")

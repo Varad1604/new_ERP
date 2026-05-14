@@ -16,6 +16,7 @@ const (
 
 type Account struct {
 	ID        string      `json:"id" db:"id"`
+	TenantID  string      `json:"tenant_id" db:"tenant_id"`
 	Code      string      `json:"code" db:"code"`
 	Name      string      `json:"name" db:"name"`
 	Type      AccountType `json:"type" db:"type"`
@@ -34,6 +35,7 @@ const (
 
 type JournalEntry struct {
 	ID              string        `json:"id" db:"id"`
+	TenantID        string        `json:"tenant_id" db:"tenant_id"`
 	ReferenceNumber string        `json:"reference_number" db:"reference_number"`
 	Description     string        `json:"description" db:"description"`
 	Status          JournalStatus `json:"status" db:"status"`
@@ -45,6 +47,7 @@ type JournalEntry struct {
 
 type LedgerLine struct {
 	ID             string    `json:"id" db:"id"`
+	TenantID       string    `json:"tenant_id" db:"tenant_id"`
 	JournalEntryID string    `json:"journal_entry_id" db:"journal_entry_id"`
 	AccountID      string    `json:"account_id" db:"account_id"`
 	Amount         float64   `json:"amount" db:"amount"` // Positive = Debit, Negative = Credit

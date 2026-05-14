@@ -32,9 +32,11 @@ jobs:
       run: |
         cd backend/ai
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run tests (stub)
-      run: echo "No tests yet"
+        pip install -r requirements.txt httpx pytest
+    - name: Run tests
+      run: |
+        cd backend/ai
+        python -m pytest tests/
 
   build-frontend:
     runs-on: ubuntu-latest

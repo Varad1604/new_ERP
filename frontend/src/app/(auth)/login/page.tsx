@@ -7,6 +7,7 @@ import axios from "axios"
 import { KeyRound, Mail } from "lucide-react"
 
 export default function LoginPage() {
+  const [tenantId, setTenantId] = useState("00000000-0000-0000-0000-000000000000") // Default system tenant
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -20,9 +21,9 @@ export default function LoginPage() {
     setError("")
 
     try {
-      // Stub the actual API call if server isn't running, but structured for real integration
+      // For enterprise scale, Axios interceptors handle baseUrl & retries
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1"
-      const res = await axios.post(`${apiUrl}/auth/login`, { email, password })
+      const res = await axios.post(`${apiUrl}/auth/login`, { tenant_id: tenantId, email, password })
 
       setToken(res.data.access_token)
       router.push("/dashboard")
@@ -62,6 +63,20 @@ export default function LoginPage() {
                 </div>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Workspace / Tenant ID</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <input
+                  type="text"
+                  required
+                  value={tenantId}
+                  onChange={(e) => setTenantId(e.target.value)}
+                  className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                  placeholder="00000000-0000-0000-0000-000000000000"
+                />
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Email address</label>

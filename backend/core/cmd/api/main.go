@@ -30,6 +30,13 @@ func main() {
 		log.Printf("Warning: Failed to connect to database. Starting without DB (stub mode). Error: %v", err)
 	} else {
 		log.Println("Successfully connected to the database.")
+
+		// Run Database Migrations
+		migrationsPath := getEnv("MIGRATIONS_PATH", "db/migrations")
+		err = database.RunMigrations(db, migrationsPath)
+		if err != nil {
+			log.Fatalf("Critical: Database migrations failed: %v", err)
+		}
 	}
 
 	jwtSecret := getEnv("JWT_SECRET", "super-secret-enterprise-key-do-not-use-in-prod")

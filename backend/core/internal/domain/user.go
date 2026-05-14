@@ -6,6 +6,7 @@ import (
 
 type Role struct {
 	ID          string    `json:"id" db:"id"`
+	TenantID    string    `json:"tenant_id" db:"tenant_id"`
 	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
@@ -13,6 +14,7 @@ type Role struct {
 
 type User struct {
 	ID           string    `json:"id" db:"id"`
+	TenantID     string    `json:"tenant_id" db:"tenant_id"`
 	Email        string    `json:"email" db:"email"`
 	PasswordHash string    `json:"-" db:"password_hash"`
 	RoleID       *string   `json:"role_id" db:"role_id"`

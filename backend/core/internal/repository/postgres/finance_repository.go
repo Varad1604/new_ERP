@@ -93,3 +93,44 @@ func (r *FinanceRepository) PostJournalEntry(ctx context.Context, entry *domain.
 	err = tx.Commit()
 	return err
 }
+
+func (r *FinanceRepository) GetDashboardMetrics(ctx context.Context, tenantID string) (*domain.DashboardMetrics, error) {
+	metrics := &domain.DashboardMetrics{}
+
+	// 1. Calculate Total Revenue (Sum of all credit lines for REVENUE accounts)
+	// In double-entry, revenue increases with a credit (negative amount in our schema design)
+	revenueQuery := `
+		SELECT COALESCE(SUM(ABS(ll.amount)), 0)
+		FROM ledger_lines ll
+		JOIN accounts a ON ll.account_id = a.id
+		WHERE ll.tenant_id = $1 AND a.type = 'REVENUE' AND ll.amount < 0
+	`
+	err := r.db.GetContext(ctx, &metrics.TotalRevenue, revenueQuery, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Count Active Employees (For now, count active users in the tenant)
+	employeeQuery := `
+		SELECT COUNT(*)
+		FROM users
+		WHERE tenant_id = $1 AND is_active = true
+	`
+	err = r.db.GetContext(ctx, &metrics.ActiveEmployees, employeeQuery, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Count Pending Approvals (Journals in DRAFT state)
+	approvalsQuery := `
+		SELECT COUNT(*)
+		FROM journal_entries
+		WHERE tenant_id = $1 AND status = 'DRAFT'
+	`
+	err = r.db.GetContext(ctx, &metrics.PendingApprovals, approvalsQuery, tenantID)
+	if err != nil {
+		return nil, err
+	}
+
+	return metrics, nil
+}

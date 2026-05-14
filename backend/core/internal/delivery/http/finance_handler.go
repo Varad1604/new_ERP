@@ -22,6 +22,27 @@ func (h *FinanceHandler) RegisterRoutes(router *gin.RouterGroup) {
 		financeGroup.GET("/accounts", h.GetAccounts)
 		financeGroup.POST("/journals", h.PostJournalEntry)
 	}
+
+	dashboardGroup := router.Group("/dashboard")
+	{
+		dashboardGroup.GET("/metrics", h.GetDashboardMetrics)
+	}
+}
+
+func (h *FinanceHandler) GetDashboardMetrics(c *gin.Context) {
+	tenantID := c.GetString("tenant_id")
+	if tenantID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant not authenticated"})
+		return
+	}
+
+	metrics, err := h.financeUseCase.GetDashboardMetrics(c.Request.Context(), tenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve dashboard metrics"})
+		return
+	}
+
+	c.JSON(http.StatusOK, metrics)
 }
 
 func (h *FinanceHandler) CreateAccount(c *gin.Context) {

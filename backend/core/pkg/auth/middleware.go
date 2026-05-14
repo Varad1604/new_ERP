@@ -49,8 +49,15 @@ func AuthMiddleware(secretKey string) gin.HandlerFunc {
 			return
 		}
 
-		// Set the User ID in context for downstream handlers
+		tenantID, ok := claims["tenant_id"].(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid tenant claim. Multi-tenant isolation requires tenant context."})
+			return
+		}
+
+		// Set the User ID and Tenant ID in context for downstream handlers to enforce RLS / query scoping
 		c.Set("user_id", userID)
+		c.Set("tenant_id", tenantID)
 
 		c.Next()
 	}

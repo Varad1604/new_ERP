@@ -17,18 +17,18 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 
 func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
-		INSERT INTO users (email, password_hash, first_name, last_name)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO users (tenant_id, email, password_hash, first_name, last_name)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, is_active, created_at, updated_at
 	`
-	return r.db.QueryRowxContext(ctx, query, user.Email, user.PasswordHash, user.FirstName, user.LastName).
+	return r.db.QueryRowxContext(ctx, query, user.TenantID, user.Email, user.PasswordHash, user.FirstName, user.LastName).
 		Scan(&user.ID, &user.IsActive, &user.CreatedAt, &user.UpdatedAt)
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *UserRepository) GetByEmailAndTenant(ctx context.Context, email string, tenantID string) (*domain.User, error) {
 	var user domain.User
-	query := `SELECT * FROM users WHERE email = $1`
-	err := r.db.GetContext(ctx, &user, query, email)
+	query := `SELECT * FROM users WHERE email = $1 AND tenant_id = $2`
+	err := r.db.GetContext(ctx, &user, query, email, tenantID)
 	if err != nil {
 		return nil, err
 	}

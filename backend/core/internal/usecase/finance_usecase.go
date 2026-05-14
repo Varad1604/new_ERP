@@ -96,3 +96,10 @@ func (u *FinanceUseCase) PostJournalEntry(ctx context.Context, req PostJournalRe
 
 	return entry, nil
 }
+
+func (u *FinanceUseCase) GetDashboardMetrics(ctx context.Context, tenantID string) (*domain.DashboardMetrics, error) {
+	if tenantID == "" {
+		return nil, errors.New("tenant ID is required")
+	}
+	return u.financeRepo.GetDashboardMetrics(ctx, tenantID)
+}

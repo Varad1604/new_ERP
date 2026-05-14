@@ -26,6 +26,7 @@ func NewAuthUseCase(userRepo *postgres.UserRepository, jwtSecret string) *AuthUs
 }
 
 type RegisterRequest struct {
+	TenantID  string `json:"tenant_id" binding:"required,uuid"`
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
 	FirstName string `json:"first_name" binding:"required"`
@@ -33,6 +34,7 @@ type RegisterRequest struct {
 }
 
 type LoginRequest struct {
+	TenantID string `json:"tenant_id" binding:"required,uuid"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
@@ -44,6 +46,7 @@ func (u *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*domai
 	}
 
 	user := &domain.User{
+		TenantID:     req.TenantID,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		FirstName:    req.FirstName,
@@ -59,9 +62,9 @@ func (u *AuthUseCase) Register(ctx context.Context, req RegisterRequest) (*domai
 }
 
 func (u *AuthUseCase) Login(ctx context.Context, req LoginRequest) (string, error) {
-	user, err := u.userRepo.GetByEmail(ctx, req.Email)
+	user, err := u.userRepo.GetByEmailAndTenant(ctx, req.Email, req.TenantID)
 	if err != nil {
-		return "", errors.New("invalid email or password")
+		return "", errors.New("invalid email, password, or tenant ID")
 	}
 
 	if !user.IsActive {
@@ -70,14 +73,15 @@ func (u *AuthUseCase) Login(ctx context.Context, req LoginRequest) (string, erro
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
 	if err != nil {
-		return "", errors.New("invalid email or password")
+		return "", errors.New("invalid email, password, or tenant ID")
 	}
 
-	// Generate JWT
+	// Generate JWT with Tenant Context for enterprise isolation
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":     user.ID,
-		"role_id": user.RoleID,
-		"exp":     time.Now().Add(u.jwtExpTime).Unix(),
+		"sub":       user.ID,
+		"tenant_id": user.TenantID,
+		"role_id":   user.RoleID,
+		"exp":       time.Now().Add(u.jwtExpTime).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(u.jwtSecret))
